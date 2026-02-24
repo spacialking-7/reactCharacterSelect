@@ -2,209 +2,275 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   Image,
   StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
 } from "react-native";
+import { Provider as PaperProvider, Button, TextInput } from "react-native-paper";
+
+const { width } = Dimensions.get("window");
+
+// ---------------- STORY DATA ----------------
+const storyData = (playerName) => [
+  {
+    text: `Welcome, ${playerName}! Your journey begins in the mystical forest.`,
+    image: require("./assets/forest.jpg"),
+  },
+  {
+    text: `${playerName}, you see a fork in the path. Will you go left or right?`,
+    image: require("./assets/river.jpg"),
+  },
+  {
+    text: `${playerName}, night falls and you find a mysterious cabin.`,
+    image: require("./assets/cabin.jpg"),
+  },
+  {
+    text: `Inside the cabin, you discover a hidden passage to a cave.`,
+    image: require("./assets/cave.jpg"),
+  },
+];
+
+// ---------------- CHARACTER DATA ----------------
+const maleChars = [
+  { id: "guy1", image: require("./assets/guy1.png") },
+  { id: "guy2", image: require("./assets/guy2.png") },
+  { id: "guy3", image: require("./assets/guy3.png") },
+];
+
+const femaleChars = [
+  { id: "girl1", image: require("./assets/girl1.png") },
+  { id: "girl2", image: require("./assets/girl2.png") },
+  { id: "girl3", image: require("./assets/girl3.png") },
+];
 
 export default function App() {
-  const [screen, setScreen] = useState("name"); // name | select | game
   const [playerName, setPlayerName] = useState("");
-
-  // Character data
-  const maleChars = [
-    { id: "guy1", image: require("./assets/guy1.png") },
-    { id: "guy2", image: require("./assets/guy2.png") },
-    { id: "guy3", image: require("./assets/guy3.png") },
-  ];
-  const femaleChars = [
-    { id: "girl1", image: require("./assets/girl1.png") },
-    { id: "girl2", image: require("./assets/girl2.png") },
-    { id: "girl3", image: require("./assets/girl3.png") },
-  ];
-
-  // Indexes for scrolling
+  const [screen, setScreen] = useState("name"); // "name" | "character" | "story"
   const [maleIndex, setMaleIndex] = useState(0);
   const [femaleIndex, setFemaleIndex] = useState(0);
+  const [selected, setSelected] = useState(null); // "male" | "female"
+  const [storyIndex, setStoryIndex] = useState(0);
 
-  // Selected character
-  const [selected, setSelected] = useState(null);
+  const story = storyData(playerName);
+  const selectedChar =
+    selected === "male" ? maleChars[maleIndex] : femaleChars[femaleIndex];
 
-  // Handlers
-  const prevMale = () =>
-    setMaleIndex((maleIndex - 1 + maleChars.length) % maleChars.length);
-  const nextMale = () =>
-    setMaleIndex((maleIndex + 1) % maleChars.length);
-
-  const prevFemale = () =>
-    setFemaleIndex((femaleIndex - 1 + femaleChars.length) % femaleChars.length);
-  const nextFemale = () =>
-    setFemaleIndex((femaleIndex + 1) % femaleChars.length);
-
-  const handleNextFromName = () => {
-    if (playerName.trim()) setScreen("select");
+  // ---------------- HANDLERS ----------------
+  const nextFromName = () => {
+    if (playerName.trim()) setScreen("character");
   };
 
-  const handlePlay = () => {
-    if (selected) setScreen("game");
-    else alert("Please select a character!");
+  const nextFromCharacter = () => {
+    if (selected) setScreen("story");
   };
 
-  // -------- SCREENS --------
+  const storyNext = () => {
+    if (storyIndex < story.length - 1) setStoryIndex(storyIndex + 1);
+  };
+
+  const storyBack = () => {
+    if (storyIndex > 0) setStoryIndex(storyIndex - 1);
+  };
+
+  const changeChar = (type, dir) => {
+    if (type === "male") {
+      setMaleIndex((prev) => (prev + dir + maleChars.length) % maleChars.length);
+    } else {
+      setFemaleIndex((prev) => (prev + dir + femaleChars.length) % femaleChars.length);
+    }
+  };
+
+  // ---------------- SCREENS ----------------
   if (screen === "name") {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Enter Your Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Player Name"
-          placeholderTextColor="#aaa"
-          value={playerName}
-          onChangeText={setPlayerName}
-        />
-        <TouchableOpacity
-          style={[styles.button, { opacity: playerName.trim() ? 1 : 0.5 }]}
-          onPress={handleNextFromName}
-          disabled={!playerName.trim()}
-        >
-          <Text style={styles.buttonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
+      <PaperProvider>
+        <View style={styles.container}>
+          <Text style={styles.title}>Enter Your Name</Text>
+          <TextInput
+            mode="outlined"
+            placeholder="Your Name"
+            value={playerName}
+            onChangeText={setPlayerName}
+            style={styles.input}
+          />
+          <Button mode="contained" onPress={nextFromName} style={styles.button}>
+            Next
+          </Button>
+        </View>
+      </PaperProvider>
     );
   }
 
-  if (screen === "select") {
+  if (screen === "character") {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Select Your Character</Text>
+      <PaperProvider>
+        <View style={styles.container}>
+          <Text style={styles.title}>Select Your Character</Text>
+          <View style={styles.characterRow}>
+            {/* Male Character */}
+            <View style={styles.charContainer}>
+              <TouchableOpacity onPress={() => setSelected("male")} activeOpacity={0.7}>
+                <Image
+                  source={maleChars[maleIndex].image}
+                  style={[
+                    styles.characterImage,
+                    selected === "male" && styles.selectedBorder,
+                  ]}
+                />
+              </TouchableOpacity>
+              <View style={styles.arrowRow}>
+                <Button compact onPress={() => changeChar("male", -1)}>
+                  ◀
+                </Button>
+                <Button compact onPress={() => changeChar("male", 1)}>
+                  ▶
+                </Button>
+              </View>
+            </View>
 
-        <View style={styles.row}>
-          {/* Male Column */}
-          <View style={styles.column}>
-            <TouchableOpacity onPress={prevMale}>
-              <Text style={styles.arrow}>⬅</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.charCard,
-                selected === "male" ? styles.selectedCard : {},
-              ]}
-              onPress={() => setSelected("male")}
-            >
-              <Image
-                source={maleChars[maleIndex].image}
-                style={styles.characterImage}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={nextMale}>
-              <Text style={styles.arrow}>➡</Text>
-            </TouchableOpacity>
-            <Text style={styles.charLabel}>Male</Text>
+            {/* Female Character */}
+            <View style={styles.charContainer}>
+              <TouchableOpacity onPress={() => setSelected("female")} activeOpacity={0.7}>
+                <Image
+                  source={femaleChars[femaleIndex].image}
+                  style={[
+                    styles.characterImage,
+                    selected === "female" && styles.selectedBorder,
+                  ]}
+                />
+              </TouchableOpacity>
+              <View style={styles.arrowRow}>
+                <Button compact onPress={() => changeChar("female", -1)}>
+                  ◀
+                </Button>
+                <Button compact onPress={() => changeChar("female", 1)}>
+                  ▶
+                </Button>
+              </View>
+            </View>
           </View>
 
-          {/* Female Column */}
-          <View style={styles.column}>
-            <TouchableOpacity onPress={prevFemale}>
-              <Text style={styles.arrow}>⬅</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.charCard,
-                selected === "female" ? styles.selectedCard : {},
-              ]}
-              onPress={() => setSelected("female")}
-            >
-              <Image
-                source={femaleChars[femaleIndex].image}
-                style={styles.characterImage}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={nextFemale}>
-              <Text style={styles.arrow}>➡</Text>
-            </TouchableOpacity>
-            <Text style={styles.charLabel}>Female</Text>
-          </View>
+          <Button
+            mode="contained"
+            onPress={nextFromCharacter}
+            style={[styles.button, { marginTop: 20 }]}
+          >
+            Play
+          </Button>
         </View>
-
-        <TouchableOpacity style={styles.button} onPress={handlePlay}>
-          <Text style={styles.buttonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
+      </PaperProvider>
     );
   }
 
-  if (screen === "game") {
-    const char =
-      selected === "male"
-        ? maleChars[maleIndex]
-        : femaleChars[femaleIndex];
-
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Welcome, {playerName}!</Text>
-        <View style={styles.charCard}>
-          <Image source={char.image} style={styles.characterImage} />
+  // Story screen
+  return (
+    <PaperProvider>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Adventure Begins</Text>
+        <View style={styles.storyImageContainer}>
+          <Image source={story[storyIndex].image} style={styles.storyImage} />
+          {selectedChar && <Image source={selectedChar.image} style={styles.overlayChar} />}
         </View>
-        <Text style={styles.subtitle}>
-          You selected: {selected} ({char.id})
-        </Text>
-      </View>
-    );
-  }
+        <Text style={styles.storyText}>{story[storyIndex].text}</Text>
+        <View style={styles.storyNav}>
+          <Button disabled={storyIndex === 0} onPress={storyBack} style={styles.navButton}>
+            Back
+          </Button>
+          {storyIndex < story.length - 1 ? (
+            <Button onPress={storyNext} style={styles.navButton}>
+              Next
+            </Button>
+          ) : (
+            <Text style={{ fontSize: 16, marginLeft: 10 }}>The End</Text>
+          )}
+        </View>
+      </ScrollView>
+    </PaperProvider>
+  );
 }
 
-// -------- STYLES --------
+// ---------------- STYLES ----------------
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
-    justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    justifyContent: "center",
+    padding: 16,
+    backgroundColor: "#f2f2f2",
   },
-  title: { fontSize: 26, color: "#fff", fontWeight: "bold", marginBottom: 20 },
-  subtitle: { color: "#aaa", marginTop: 20, fontSize: 18 },
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
   input: {
     width: "80%",
-    height: 50,
-    backgroundColor: "#1f1f1f",
-    color: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    fontSize: 18,
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#FF5722",
-    paddingVertical: 15,
-    paddingHorizontal: 60,
-    borderRadius: 15,
-    marginTop: 20,
+    width: 160,
+    alignSelf: "center",
   },
-  buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  row: { flexDirection: "row", justifyContent: "space-around", width: "100%" },
-  column: { alignItems: "center" },
-  charCard: {
-    width: 120,
-    height: 120,
-    backgroundColor: "#1f1f1f",
-    borderRadius: 12,
-    marginVertical: 10,
-    justifyContent: "center",
+  characterRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  charContainer: {
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
   },
-  selectedCard: { borderColor: "#FF5722", borderWidth: 4 },
-  characterImage: { width: 100, height: 100, resizeMode: "contain" },
-  arrow: { fontSize: 28, color: "#fff", marginVertical: 5 },
-  charLabel: { color: "#aaa", fontSize: 16, marginTop: 5 },
+  characterImage: {
+    width: width / 3.5,
+    height: width / 3.5,
+    resizeMode: "contain",
+    marginBottom: 8,
+  },
+  arrowRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: 80,
+  },
+  selectedBorder: {
+    borderWidth: 3,
+    borderColor: "#FF5722",
+    borderRadius: 12,
+  },
+  storyImageContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  storyImage: {
+    width: "100%",
+    height: 250,
+    borderRadius: 12,
+    resizeMode: "cover",
+  },
+  overlayChar: {
+    width: 100,
+    height: 100,
+    resizeMode: "contain",
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    borderWidth: 2,
+    borderColor: "#FF5722",
+    borderRadius: 10,
+  },
+  storyText: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  storyNav: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  navButton: {
+    marginHorizontal: 10,
+  },
 });
