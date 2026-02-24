@@ -1,0 +1,14 @@
+Character select for unnamed game
+Native react
+
+Player name screen
+
+Prompt player name:
+Receive and store: 
+Press next button: 
+
+Character select screen
+A grid with 1 row, 2 columns guy1.png and girl1.png on either side
+Left/right arrow pair on each side to flip through characters(guy2.png,guy3.png/girl2.png,girl3.png)
+
+Press play button:
