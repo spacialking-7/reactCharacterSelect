@@ -9,51 +9,49 @@ import {
 } from "react-native";
 
 export default function App() {
-  // -------- STATE --------
   const [screen, setScreen] = useState("name"); // name | select | game
   const [playerName, setPlayerName] = useState("");
-  const [selectedMale, setSelectedMale] = useState(0);
-  const [selectedFemale, setSelectedFemale] = useState(0);
 
-  // -------- DATA --------
+  // Character data
   const maleChars = [
-    require("./assets/guy1.png"),
-    require("./assets/guy2.png"),
-    require("./assets/guy3.png"),
+    { id: "guy1", image: require("./assets/guy1.png") },
+    { id: "guy2", image: require("./assets/guy2.png") },
+    { id: "guy3", image: require("./assets/guy3.png") },
   ];
-
   const femaleChars = [
-    require("./assets/girl1.png"),
-    require("./assets/girl2.png"),
-    require("./assets/girl3.png"),
+    { id: "girl1", image: require("./assets/girl1.png") },
+    { id: "girl2", image: require("./assets/girl2.png") },
+    { id: "girl3", image: require("./assets/girl3.png") },
   ];
 
-  // -------- HANDLERS --------
-  const nextMale = () =>
-    setSelectedMale((selectedMale + 1) % maleChars.length);
-  const prevMale = () =>
-    setSelectedMale((selectedMale - 1 + maleChars.length) % maleChars.length);
+  // Indexes for scrolling
+  const [maleIndex, setMaleIndex] = useState(0);
+  const [femaleIndex, setFemaleIndex] = useState(0);
 
-  const nextFemale = () =>
-    setSelectedFemale((selectedFemale + 1) % femaleChars.length);
+  // Selected character
+  const [selected, setSelected] = useState(null);
+
+  // Handlers
+  const prevMale = () =>
+    setMaleIndex((maleIndex - 1 + maleChars.length) % maleChars.length);
+  const nextMale = () =>
+    setMaleIndex((maleIndex + 1) % maleChars.length);
+
   const prevFemale = () =>
-    setSelectedFemale((selectedFemale - 1 + femaleChars.length) % femaleChars.length);
+    setFemaleIndex((femaleIndex - 1 + femaleChars.length) % femaleChars.length);
+  const nextFemale = () =>
+    setFemaleIndex((femaleIndex + 1) % femaleChars.length);
 
   const handleNextFromName = () => {
-    if (playerName.trim() !== "") setScreen("select");
+    if (playerName.trim()) setScreen("select");
   };
 
   const handlePlay = () => {
-    // You can navigate to game screen or store selection here
-    console.log("Player Name:", playerName);
-    console.log("Selected Male Index:", selectedMale);
-    console.log("Selected Female Index:", selectedFemale);
-    alert(`Ready! ${playerName} selected characters.`);
+    if (selected) setScreen("game");
+    else alert("Please select a character!");
   };
 
   // -------- SCREENS --------
-
-  // ---- NAME SCREEN ----
   if (screen === "name") {
     return (
       <View style={styles.container}>
@@ -76,25 +74,30 @@ export default function App() {
     );
   }
 
-  // ---- CHARACTER SELECT SCREEN ----
   if (screen === "select") {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Select Your Characters</Text>
+        <Text style={styles.title}>Select Your Character</Text>
 
         <View style={styles.row}>
-          {/* Male */}
-          <View style={styles.charColumn}>
+          {/* Male Column */}
+          <View style={styles.column}>
             <TouchableOpacity onPress={prevMale}>
               <Text style={styles.arrow}>⬅</Text>
             </TouchableOpacity>
 
-            <View style={styles.charCard}>
+            <TouchableOpacity
+              style={[
+                styles.charCard,
+                selected === "male" ? styles.selectedCard : {},
+              ]}
+              onPress={() => setSelected("male")}
+            >
               <Image
-                source={maleChars[selectedMale]}
+                source={maleChars[maleIndex].image}
                 style={styles.characterImage}
               />
-            </View>
+            </TouchableOpacity>
 
             <TouchableOpacity onPress={nextMale}>
               <Text style={styles.arrow}>➡</Text>
@@ -102,18 +105,24 @@ export default function App() {
             <Text style={styles.charLabel}>Male</Text>
           </View>
 
-          {/* Female */}
-          <View style={styles.charColumn}>
+          {/* Female Column */}
+          <View style={styles.column}>
             <TouchableOpacity onPress={prevFemale}>
               <Text style={styles.arrow}>⬅</Text>
             </TouchableOpacity>
 
-            <View style={styles.charCard}>
+            <TouchableOpacity
+              style={[
+                styles.charCard,
+                selected === "female" ? styles.selectedCard : {},
+              ]}
+              onPress={() => setSelected("female")}
+            >
               <Image
-                source={femaleChars[selectedFemale]}
+                source={femaleChars[femaleIndex].image}
                 style={styles.characterImage}
               />
-            </View>
+            </TouchableOpacity>
 
             <TouchableOpacity onPress={nextFemale}>
               <Text style={styles.arrow}>➡</Text>
@@ -122,9 +131,28 @@ export default function App() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.playButton} onPress={handlePlay}>
-          <Text style={styles.playButtonText}>Play</Text>
+        <TouchableOpacity style={styles.button} onPress={handlePlay}>
+          <Text style={styles.buttonText}>Next</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (screen === "game") {
+    const char =
+      selected === "male"
+        ? maleChars[maleIndex]
+        : femaleChars[femaleIndex];
+
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome, {playerName}!</Text>
+        <View style={styles.charCard}>
+          <Image source={char.image} style={styles.characterImage} />
+        </View>
+        <Text style={styles.subtitle}>
+          You selected: {selected} ({char.id})
+        </Text>
       </View>
     );
   }
@@ -139,13 +167,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  title: {
-    fontSize: 26,
-    color: "#fff",
-    marginBottom: 30,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
+  title: { fontSize: 26, color: "#fff", fontWeight: "bold", marginBottom: 20 },
+  subtitle: { color: "#aaa", marginTop: 20, fontSize: 18 },
   input: {
     width: "80%",
     height: 50,
@@ -157,25 +180,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#FF5722",
     paddingVertical: 15,
-    paddingHorizontal: 50,
-    borderRadius: 12,
+    paddingHorizontal: 60,
+    borderRadius: 15,
+    marginTop: 20,
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    marginBottom: 40,
-  },
-  charColumn: {
-    alignItems: "center",
-  },
+  buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  row: { flexDirection: "row", justifyContent: "space-around", width: "100%" },
+  column: { alignItems: "center" },
   charCard: {
     width: 120,
     height: 120,
@@ -190,30 +203,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 5,
   },
-  characterImage: {
-    width: 100,
-    height: 100,
-    resizeMode: "contain",
-  },
-  arrow: {
-    fontSize: 28,
-    color: "#fff",
-    marginVertical: 5,
-  },
-  charLabel: {
-    color: "#aaa",
-    fontSize: 16,
-    marginTop: 5,
-  },
-  playButton: {
-    backgroundColor: "#FF5722",
-    paddingVertical: 15,
-    paddingHorizontal: 60,
-    borderRadius: 15,
-  },
-  playButtonText: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
+  selectedCard: { borderColor: "#FF5722", borderWidth: 4 },
+  characterImage: { width: 100, height: 100, resizeMode: "contain" },
+  arrow: { fontSize: 28, color: "#fff", marginVertical: 5 },
+  charLabel: { color: "#aaa", fontSize: 16, marginTop: 5 },
 });
